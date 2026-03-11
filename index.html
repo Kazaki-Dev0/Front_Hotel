@@ -38,13 +38,16 @@
       label{font-size:13px; color:var(--muted); margin-bottom:6px; font-weight:700}
       .form-row{display:flex; gap:8px}
       .form-col{flex:1}
-      input[type=text], textarea, select{
-        background:var(--input-bg); border:1px solid var(--border); padding:10px 12px; border-radius:10px; color:var(--text); outline:none; transition:box-shadow .12s, border-color .12s;
+      input[type=text], textarea, select, input[type=number]{
+        background:var(--input-bg); border:1px solid rgba(255,255,255,0.10); padding:10px 12px; border-radius:10px; color:var(--text); outline:none; transition:box-shadow .12s, border-color .12s;
         font-size:14px;
       }
+      /* melhorar visibilidade de selects/opções */
+      select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; color:var(--text); background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.02)); }
+      select option{ color:var(--text); background:var(--card); }
       input::placeholder, textarea::placeholder{ color: rgba(223,217,232,0.55) }
       input[type=text]:focus, textarea:focus, select:focus{ border-color: rgba(139,92,246,0.95); box-shadow: 0 8px 26px rgba(139,92,246,0.12)}
-      textarea{min-height:84px; resize:vertical}
+  textarea{min-height:84px; resize:vertical}
       button{background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:white; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:800; letter-spacing:0.2px; transition:transform .08s ease, box-shadow .12s}
       button:hover{transform:translateY(-2px); box-shadow: 0 12px 30px rgba(91,33,182,0.18)}
       button.secondary{background:transparent; border:1px solid var(--border); color:var(--muted)}
@@ -85,8 +88,14 @@
           <label for="hotelName">Nome do hotel</label>
           <input id="hotelName" name="hotelName" type="text" placeholder="Ex: Hotel Castanho" required>
 
-          <label for="hotelLocation">Localização (opcional)</label>
-          <input id="hotelLocation" name="hotelLocation" type="text" placeholder="Transilvânia">
+        <label for="hotelCity">Cidade</label>
+        <input id="hotelCity" name="hotelCity" type="text" placeholder="Cidade do hotel" required>
+
+        <label for="hotelLocation">Localização (opcional)</label>
+        <input id="hotelLocation" name="hotelLocation" type="text" placeholder="Bairro, rua...">
+
+        <label for="hotelStars">Quantidade de estrelas</label>
+        <input id="hotelStars" name="hotelStars" type="number" min="0" max="5" step="1" placeholder="Ex: 4" required>
 
           <label for="hotelDesc">Descrição (opcional)</label>
           <textarea id="hotelDesc" name="hotelDesc" placeholder="Descrição curta..."></textarea>
@@ -104,6 +113,8 @@
           <label for="roomType">Tipo de quarto</label>
           <input id="roomType" name="roomType" type="text" placeholder="Ex: Suíte, Standard, Família" required>
 
+          <label for="roomPrice">Preço (por noite)</label>
+          <input id="roomPrice" name="roomPrice" type="number" step="0.01" min="0" placeholder="Ex: 120.00" required>
           <label for="roomHotelSelect">Selecione o hotel (por nome)</label>
           <select id="roomHotelSelect" required>
             <option value="">Carregando hotéis...</option>
@@ -172,6 +183,16 @@
       // agora procuramos pelo TIPO do quarto (campo em pt/pt-camelcase/pt_snake/engl/obj)
       return r.tipo ?? r.tipoQuarto ?? r.tipo_quarto ?? r.roomType ?? r.room_type ?? r.type ?? r.nome ?? r.name ?? r.titulo ?? r.title ?? (r.numero ? `Quarto ${r.numero}` : null) ?? 'Sem tipo';
     }
+    function roomPriceOf(r){
+      return r.preco ?? r.preço ?? r.price ?? r.valor ?? r.valorDiaria ?? r.dailyPrice ?? r.valor_por_noite ?? null;
+    }
+
+    function formatCurrency(v){
+      if(v === null || v === undefined || v === '') return '—';
+      const n = Number(v);
+      if(isNaN(n)) return String(v);
+      try{ return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }catch(e){ return 'R$ '+n.toFixed(2) }
+    }
     function roomHotelIdOf(r){ return r.hotelId ?? r.idHotel ?? r.hoteisId ?? r.hotel?.id ?? null }
 
     async function fetchJson(url, opts){
@@ -199,8 +220,14 @@
     }
 
     async function postHotel(payload){
-      // envia em formato esperado: usamos 'nome' preferencial
-      const body = { nome: payload.nome, localizacao: payload.localizacao, descricao: payload.descricao };
+      // envia em formato esperado: usamos 'nome' preferencial e adicionamos cidade e qtdEstrelas
+      const body = {
+        nome: payload.nome,
+        cidade: payload.cidade ?? payload.city,
+        localizacao: payload.localizacao,
+        qtdEstrelas: payload.qtdEstrelas ? parseInt(payload.qtdEstrelas,10) : undefined,
+        descricao: payload.descricao
+      };
       return await fetchJson(`${API_BASE}/Hoteis`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
     }
 
@@ -213,9 +240,15 @@
     }
 
     async function postRoom(payload){
-      // payload: { tipo, descricao, hotelId }
-      // Envia 'tipo' (pt) e 'nome' para compatibilidade com backends variados.
-      const body = { tipo: payload.tipo, nome: payload.nome ?? payload.tipo, descricao: payload.descricao, hotelId: payload.hotelId };
+      // payload: { tipo, descricao, preco, hotelId }
+      // Envia 'tipo' (pt), 'preco' e também 'nome' para compatibilidade com backends variados.
+      const body = {
+        tipo: payload.tipo,
+        nome: payload.nome ?? payload.tipo,
+        descricao: payload.descricao,
+        preco: payload.preco ?? payload.price,
+        hotelId: payload.hotelId
+      };
       return await fetchJson(`${API_BASE}/Quartos`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
     }
 
@@ -227,10 +260,12 @@
       hotels.forEach(h => {
         const id = hotelIdOf(h);
         const name = hotelNameOf(h);
+        const cidade = h.cidade ?? h.city ?? '';
         const loc = h.localizacao ?? h.location ?? '';
+        const estrelas = h.qtdEstrelas ?? h.stars ?? h.estrelas ?? '';
         const desc = h.descricao ?? h.description ?? '';
         const el = document.createElement('div'); el.className='hotel-item';
-        el.innerHTML = `<strong>${escapeHtml(name)}</strong><div class="muted small">ID: ${escapeHtml(String(id))} ${loc? '• '+escapeHtml(loc):''}</div><div class="small">${escapeHtml(desc)}</div>`;
+        el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><strong>${escapeHtml(name)}</strong><span class="tag">${escapeHtml(String(estrelas))} ★</span></div><div class="meta muted small">ID: ${escapeHtml(String(id))} ${cidade? '• '+escapeHtml(cidade):''} ${loc? '• '+escapeHtml(loc):''}</div><div class="small" style="margin-top:8px">${escapeHtml(desc)}</div>`;
         container.appendChild(el);
       });
     }
@@ -242,12 +277,13 @@
       rooms.forEach(r => {
         const id = roomIdOf(r);
         const name = roomNameOf(r);
+        const price = roomPriceOf(r);
         const desc = r.descricao ?? r.description ?? '';
         const hotelId = roomHotelIdOf(r);
         const hotel = hotels.find(h=>String(hotelIdOf(h)) === String(hotelId));
         const hotelName = hotel ? hotelNameOf(hotel) : (r.hotelNome ?? r.nomeHotel ?? '—');
         const el = document.createElement('div'); el.className='room-item';
-        el.innerHTML = `<strong>${escapeHtml(name)}</strong><div class="muted small">ID: ${escapeHtml(String(id))} • ${escapeHtml(hotelName)}</div><div class="small">${escapeHtml(desc)}</div>`;
+        el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><strong>${escapeHtml(name)}</strong><span class="tag">${escapeHtml(formatCurrency(price))}</span></div><div class="meta muted small">ID: ${escapeHtml(String(id))} • ${escapeHtml(hotelName)}</div><div class="small" style="margin-top:8px">${escapeHtml(desc)}</div>`;
         container.appendChild(el);
       });
     }
@@ -289,7 +325,7 @@
         const hotelName = hotel ? hotelNameOf(hotel) : (r.hotelNome ?? r.nomeHotel ?? '—');
         const opt = document.createElement('option');
         opt.value = id ?? name;
-        opt.textContent = `${name} — ${hotelName}`; // mostra nome do quarto e o hotel ao lado
+        opt.textContent = `${name} — ${hotelName} — ${formatCurrency(roomPriceOf(r))}`; // mostra tipo do quarto, hotel e preço
         sel.appendChild(opt);
       });
     }
@@ -306,11 +342,15 @@
     document.getElementById('hotelForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
       const nome = document.getElementById('hotelName').value.trim();
+      const cidade = document.getElementById('hotelCity').value.trim();
       const localizacao = document.getElementById('hotelLocation').value.trim();
+      const qtdEstrelas = document.getElementById('hotelStars').value.trim();
       const descricao = document.getElementById('hotelDesc').value.trim();
       if(!nome) return alert('Informe o nome do hotel');
+      if(!cidade) return alert('Informe a cidade do hotel');
+      if(!qtdEstrelas) return alert('Informe a quantidade de estrelas');
       try{
-        await postHotel({nome, localizacao, descricao});
+        await postHotel({nome, cidade, localizacao, qtdEstrelas, descricao});
         alert('Hotel adicionado com sucesso');
         document.getElementById('hotelForm').reset();
         await getHotels();
@@ -323,8 +363,11 @@
       e.preventDefault();
       const tipo = document.getElementById('roomType').value.trim();
       const descricao = document.getElementById('roomDesc').value.trim();
+      const precoStr = document.getElementById('roomPrice').value.trim();
+      const preco = precoStr ? parseFloat(precoStr.replace(',', '.')) : null;
       const hotelValue = document.getElementById('roomHotelSelect').value;
       if(!tipo) return alert('Informe o tipo do quarto');
+      if(preco === null || isNaN(preco)) return alert('Informe o preço do quarto');
       if(!hotelValue) return alert('Selecione um hotel');
       // hotelValue pode ser id ou nome (se o id não estiver disponível). Encontramos o id se possível
       let hotelId = hotelValue;
@@ -334,8 +377,8 @@
         hotelId = found ? hotelIdOf(found) : hotelValue;
       }
       try{
-        // enviamos tanto 'tipo' quanto 'nome' para maximizar compatibilidade com o backend
-        await postRoom({tipo, descricao, hotelId});
+        // enviamos tipo, preco e também nome (fallback)
+        await postRoom({tipo, nome: tipo, descricao, preco, hotelId});
         alert('Quarto adicionado com sucesso');
         document.getElementById('roomForm').reset();
         await getRooms();
