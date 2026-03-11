@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;600;800&display=swap" rel="stylesheet">
+    <style>
+      :root{
+        /* Mantendo o tema "transilvânia" porém com contraste melhor */
+        --bg:#07070a;           /* fundo bem escuro */
+        --card:#0f1116;         /* leve contraste para cartões */
+        --accent:#8b5cf6;       /* roxo mais vivo */
+        --accent-2:#5b21b6;     /* roxo profundo */
+        --text:#efecf6;         /* texto principal claro */
+        --muted:#cfc9d9;        /* texto secundário mais claro */
+        --border:rgba(255,255,255,0.06);
+        --input-bg:rgba(255,255,255,0.03);
+        --danger:#ff6b6b;
+        --glass: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0; font-family: 'Nunito', system-ui, sans-serif; background: radial-gradient(ellipse at 10% 10%, #111017 0%, var(--bg) 50%), var(--bg); color:var(--text);
+        -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+        line-height:1.4;
+      }
+      header{padding:22px 28px; display:flex; align-items:center; gap:16px}
+      .logo{width:64px; height:64px; border-radius:12px; background:linear-gradient(135deg,var(--accent-2),var(--accent)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; color:#fff; box-shadow: 0 10px 30px rgba(91,33,182,0.18)}
+      h1{margin:0; font-size:20px}
+      p.lead{margin:4px 0 0; color:var(--muted); font-size:13px}
+      main{display:grid; grid-template-columns: 420px 1fr; gap:20px; padding:18px 28px}
+
+      /* cartões com mais contraste e espaçamento */
+      .card{background:var(--card); border:1px solid var(--border); padding:18px; border-radius:12px; box-shadow: 0 6px 20px rgba(0,0,0,0.6)}
+      .section-title{font-weight:800; margin:0 0 12px; color:var(--text); display:flex; align-items:center; gap:10px}
+      form{display:flex; flex-direction:column; gap:10px}
+      label{font-size:13px; color:var(--muted); margin-bottom:6px; font-weight:700}
+      .form-row{display:flex; gap:8px}
+      .form-col{flex:1}
+      input[type=text], textarea, select{
+        background:var(--input-bg); border:1px solid var(--border); padding:10px 12px; border-radius:10px; color:var(--text); outline:none; transition:box-shadow .12s, border-color .12s;
+        font-size:14px;
+      }
+      input::placeholder, textarea::placeholder{ color: rgba(223,217,232,0.55) }
+      input[type=text]:focus, textarea:focus, select:focus{ border-color: rgba(139,92,246,0.95); box-shadow: 0 8px 26px rgba(139,92,246,0.12)}
+      textarea{min-height:84px; resize:vertical}
+      button{background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:white; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:800; letter-spacing:0.2px; transition:transform .08s ease, box-shadow .12s}
+      button:hover{transform:translateY(-2px); box-shadow: 0 12px 30px rgba(91,33,182,0.18)}
+      button.secondary{background:transparent; border:1px solid var(--border); color:var(--muted)}
+
+      /* content */
+      .list-grid{display:grid; grid-template-columns: 1fr 1fr; gap:14px}
+      .hotel-item, .room-item{padding:14px; border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.04)); border:1px solid rgba(255,255,255,0.03); position:relative}
+      .hotel-item{ border-left:4px solid var(--accent); }
+      .room-item{ border-left:4px solid var(--accent-2); background: linear-gradient(180deg, rgba(255,255,255,0.005), rgba(0,0,0,0.06)); }
+      .hotel-item .meta, .room-item .meta{display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px}
+      .hotel-item strong, .room-item strong{display:block; font-size:15px; color:var(--text); margin-bottom:6px}
+      .muted{color:var(--muted); font-size:13px}
+      .small{font-size:13px}
+
+      /* marcador de tipo */
+      .tag{font-size:12px; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,0.03); color:var(--muted); display:inline-block}
+
+      footer{padding:18px 28px; color:var(--muted); font-size:13px}
+
+      /* responsivo */
+      @media (max-width:980px){main{grid-template-columns:1fr; padding:12px} .list-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+  <header>
+    <div class="logo">HT</div>
+    <div>
+      <h1>Hotel Transilvânia - Painel</h1>
+      <p class="lead">Gerencie hotéis e quartos. Conecta com a API local em <code>http://localhost:5145</code></p>
+    </div>
+  </header>
+
+  <main>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card">
+        <h2 class="section-title">Adicionar Hotel</h2>
+        <form id="hotelForm">
+          <label for="hotelName">Nome do hotel</label>
+          <input id="hotelName" name="hotelName" type="text" placeholder="Ex: Hotel Castanho" required>
+
+          <label for="hotelLocation">Localização (opcional)</label>
+          <input id="hotelLocation" name="hotelLocation" type="text" placeholder="Transilvânia">
+
+          <label for="hotelDesc">Descrição (opcional)</label>
+          <textarea id="hotelDesc" name="hotelDesc" placeholder="Descrição curta..."></textarea>
+
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="submit">Adicionar Hotel</button>
+            <button type="button" class="secondary" id="refreshHotels">Atualizar lista</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Adicionar Quarto</h2>
+        <form id="roomForm">
+          <label for="roomType">Tipo de quarto</label>
+          <input id="roomType" name="roomType" type="text" placeholder="Ex: Suíte, Standard, Família" required>
+
+          <label for="roomHotelSelect">Selecione o hotel (por nome)</label>
+          <select id="roomHotelSelect" required>
+            <option value="">Carregando hotéis...</option>
+          </select>
+
+          <label for="roomDesc">Descrição (opcional)</label>
+          <textarea id="roomDesc" name="roomDesc" placeholder="Detalhes do quarto..."></textarea>
+
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="submit">Adicionar Quarto</button>
+            <button type="button" class="secondary" id="refreshRooms">Atualizar quartos</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Seleções rápidas</h2>
+        <label for="hotelSelect">Hotéis disponíveis (nome)</label>
+        <select id="hotelSelect"><option>Carregando...</option></select>
+
+        <label for="roomSelect" style="margin-top:8px">Quartos disponíveis (mostra hotel)</label>
+        <select id="roomSelect"><option>Carregando...</option></select>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <h2 class="section-title">Hotéis cadastrados</h2>
+        <div id="hotelsList" class="list-grid">
+          <!-- hotéis aparecerão aqui -->
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Quartos cadastrados</h2>
+        <div id="roomsList" class="list-grid">
+          <!-- quartos aparecerão aqui -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    API endpoints esperados:
+    <ul>
+      <li><code>POST /api/Hoteis</code> - body JSON com pelo menos <code>nome</code> (ou <code>name</code>); retornará o hotel criado.</li>
+      <li><code>GET  /api/Hoteis</code> - lista de hotéis.</li>
+      <li><code>POST /api/Quartos</code> - body JSON com pelo menos <code>nome</code> e <code>hotelId</code> (ou equivalente); retornará o quarto criado.</li>
+      <li><code>GET  /api/Quartos</code> - lista de quartos.</li>
+    </ul>
+    Observação: a API deve permitir CORS para requests do navegador.
+  </footer>
+
+  <script>
+    const API_BASE = 'http://localhost:5145/api';
+
+    // Estado local
+    let hotels = [];
+    let rooms = [];
+
+    // Helpers para lidar com diferentes shapes de objeto (nome/id são comuns em PT/EN)
+    function hotelIdOf(h){ return h.id ?? h.hotelId ?? h.idHotel ?? null }
+    function hotelNameOf(h){ return h.nome ?? h.name ?? h.nomeHotel ?? 'Sem nome' }
+    function roomIdOf(r){ return r.id ?? r.quartoId ?? r.roomId ?? null }
+    function roomNameOf(r){
+      // agora procuramos pelo TIPO do quarto (campo em pt/pt-camelcase/pt_snake/engl/obj)
+      return r.tipo ?? r.tipoQuarto ?? r.tipo_quarto ?? r.roomType ?? r.room_type ?? r.type ?? r.nome ?? r.name ?? r.titulo ?? r.title ?? (r.numero ? `Quarto ${r.numero}` : null) ?? 'Sem tipo';
+    }
+    function roomHotelIdOf(r){ return r.hotelId ?? r.idHotel ?? r.hoteisId ?? r.hotel?.id ?? null }
+
+    async function fetchJson(url, opts){
+      try{
+        const res = await fetch(url, opts);
+        if(!res.ok){
+          const t = await res.text();
+          throw new Error(`${res.status} - ${t}`);
+        }
+        // tenta parsear json, se houver body
+        const txt = await res.text();
+        return txt ? JSON.parse(txt) : null;
+      }catch(err){
+        console.error('Fetch error', url, err);
+        throw err;
+      }
+    }
+
+    async function getHotels(){
+      const data = await fetchJson(`${API_BASE}/Hoteis`);
+      hotels = Array.isArray(data) ? data : (data?.items ?? []);
+      renderHotels();
+      populateHotelSelects();
+      return hotels;
+    }
+
+    async function postHotel(payload){
+      // envia em formato esperado: usamos 'nome' preferencial
+      const body = { nome: payload.nome, localizacao: payload.localizacao, descricao: payload.descricao };
+      return await fetchJson(`${API_BASE}/Hoteis`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    }
+
+    async function getRooms(){
+      const data = await fetchJson(`${API_BASE}/Quartos`);
+      rooms = Array.isArray(data) ? data : (data?.items ?? []);
+      renderRooms();
+      populateRoomSelect();
+      return rooms;
+    }
+
+    async function postRoom(payload){
+      // payload: { tipo, descricao, hotelId }
+      // Envia 'tipo' (pt) e 'nome' para compatibilidade com backends variados.
+      const body = { tipo: payload.tipo, nome: payload.nome ?? payload.tipo, descricao: payload.descricao, hotelId: payload.hotelId };
+      return await fetchJson(`${API_BASE}/Quartos`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    }
+
+    // Rendering
+    function renderHotels(){
+      const container = document.getElementById('hotelsList');
+      container.innerHTML = '';
+      if(hotels.length === 0){ container.innerHTML = '<div class="muted">Nenhum hotel encontrado.</div>'; return }
+      hotels.forEach(h => {
+        const id = hotelIdOf(h);
+        const name = hotelNameOf(h);
+        const loc = h.localizacao ?? h.location ?? '';
+        const desc = h.descricao ?? h.description ?? '';
+        const el = document.createElement('div'); el.className='hotel-item';
+        el.innerHTML = `<strong>${escapeHtml(name)}</strong><div class="muted small">ID: ${escapeHtml(String(id))} ${loc? '• '+escapeHtml(loc):''}</div><div class="small">${escapeHtml(desc)}</div>`;
+        container.appendChild(el);
+      });
+    }
+
+    function renderRooms(){
+      const container = document.getElementById('roomsList');
+      container.innerHTML = '';
+      if(rooms.length === 0){ container.innerHTML = '<div class="muted">Nenhum quarto encontrado.</div>'; return }
+      rooms.forEach(r => {
+        const id = roomIdOf(r);
+        const name = roomNameOf(r);
+        const desc = r.descricao ?? r.description ?? '';
+        const hotelId = roomHotelIdOf(r);
+        const hotel = hotels.find(h=>String(hotelIdOf(h)) === String(hotelId));
+        const hotelName = hotel ? hotelNameOf(hotel) : (r.hotelNome ?? r.nomeHotel ?? '—');
+        const el = document.createElement('div'); el.className='room-item';
+        el.innerHTML = `<strong>${escapeHtml(name)}</strong><div class="muted small">ID: ${escapeHtml(String(id))} • ${escapeHtml(hotelName)}</div><div class="small">${escapeHtml(desc)}</div>`;
+        container.appendChild(el);
+      });
+    }
+
+    function populateHotelSelects(){
+      const sel = document.getElementById('hotelSelect');
+      const sel2 = document.getElementById('roomHotelSelect');
+      sel.innerHTML = '';
+      sel2.innerHTML = '';
+      if(hotels.length === 0){
+        sel.innerHTML = '<option value="">(nenhum hotel)</option>';
+        sel2.innerHTML = '<option value="">(nenhum hotel)</option>';
+        return;
+      }
+
+      hotels.forEach(h => {
+        const id = hotelIdOf(h);
+        const name = hotelNameOf(h);
+        const opt = document.createElement('option');
+        // mostramos o nome no texto (não id) — valor guardamos como id para operações POST/PUT
+        opt.value = id ?? name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+
+        const opt2 = opt.cloneNode(true);
+        sel2.appendChild(opt2);
+      });
+    }
+
+    function populateRoomSelect(){
+      const sel = document.getElementById('roomSelect');
+      sel.innerHTML = '';
+      if(rooms.length === 0){ sel.innerHTML = '<option value="">(nenhum quarto)</option>'; return }
+      rooms.forEach(r => {
+        const id = roomIdOf(r);
+        const name = roomNameOf(r);
+        const hotelId = roomHotelIdOf(r);
+        const hotel = hotels.find(h=>String(hotelIdOf(h)) === String(hotelId));
+        const hotelName = hotel ? hotelNameOf(hotel) : (r.hotelNome ?? r.nomeHotel ?? '—');
+        const opt = document.createElement('option');
+        opt.value = id ?? name;
+        opt.textContent = `${name} — ${hotelName}`; // mostra nome do quarto e o hotel ao lado
+        sel.appendChild(opt);
+      });
+    }
+
+    // Escapar para evitar XSS em conteúdo vindo da API
+    function escapeHtml(s){
+      if(s === null || s === undefined) return '';
+      return String(s).replace(/[&<>"']/g, function(c){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
+      });
+    }
+
+    // Eventos de formulários
+    document.getElementById('hotelForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const nome = document.getElementById('hotelName').value.trim();
+      const localizacao = document.getElementById('hotelLocation').value.trim();
+      const descricao = document.getElementById('hotelDesc').value.trim();
+      if(!nome) return alert('Informe o nome do hotel');
+      try{
+        await postHotel({nome, localizacao, descricao});
+        alert('Hotel adicionado com sucesso');
+        document.getElementById('hotelForm').reset();
+        await getHotels();
+      }catch(err){
+        alert('Erro ao adicionar hotel: '+ err.message);
+      }
+    });
+
+    document.getElementById('roomForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const tipo = document.getElementById('roomType').value.trim();
+      const descricao = document.getElementById('roomDesc').value.trim();
+      const hotelValue = document.getElementById('roomHotelSelect').value;
+      if(!tipo) return alert('Informe o tipo do quarto');
+      if(!hotelValue) return alert('Selecione um hotel');
+      // hotelValue pode ser id ou nome (se o id não estiver disponível). Encontramos o id se possível
+      let hotelId = hotelValue;
+      // se valor for um nome, procuramos pelo hotel com aquele nome
+      if(!/^[0-9]+$/.test(String(hotelValue))){
+        const found = hotels.find(h => hotelNameOf(h) === hotelValue);
+        hotelId = found ? hotelIdOf(found) : hotelValue;
+      }
+      try{
+        // enviamos tanto 'tipo' quanto 'nome' para maximizar compatibilidade com o backend
+        await postRoom({tipo, descricao, hotelId});
+        alert('Quarto adicionado com sucesso');
+        document.getElementById('roomForm').reset();
+        await getRooms();
+      }catch(err){
+        alert('Erro ao adicionar quarto: '+ err.message);
+      }
+    });
+
+    document.getElementById('refreshHotels').addEventListener('click', ()=>getHotels());
+    document.getElementById('refreshRooms').addEventListener('click', ()=>getRooms());
+
+    // init
+    (async function init(){
+      try{
+        await Promise.all([getHotels(), getRooms()]);
+      }catch(err){
+        console.error('Erro ao inicializar: ', err);
+        const footer = document.querySelector('footer');
+        const m = document.createElement('div');
+        m.style.color='var(--danger)';
+        m.textContent = 'Erro ao conectar com a API. Verifique se o backend está rodando em http://localhost:5145 e habilitou CORS.';
+        footer.appendChild(m);
+      }
+    })();
+  </script>
+</body>
+</html>
